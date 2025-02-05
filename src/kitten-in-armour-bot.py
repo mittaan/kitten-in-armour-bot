@@ -11,14 +11,24 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 import os
+import sqlite3
+from mega import Mega
 from dotenv import load_dotenv
 import json
 from pathlib import Path
+from random import randint
+from datetime import datetime
 
 
 # Global constants and config method
 
 load_dotenv()
+
+MEGA_EMAIL = os.getenv("MEGA_EMAIL")
+MEGA_PASSWORD = os.getenv("MEGA_PASSWORD")
+
+mega = Mega()
+m = mega.login(MEGA_EMAIL, MEGA_PASSWORD)
 
 GETIMG_API_KEY = os.getenv("GETIMG_API_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -27,17 +37,23 @@ BOT_USERNAME = "@kitten_in_armour_bot"
 
 BOT_COMMANDS = [('/start', 'Starts a conversation with the bot.'),
                 ('/magic', 'Secret incantations.'),
-                ('/call', 'Get yourself a worthy companion.')]
+                ('/companion', 'Get yourself a worthy companion.')]
 
 SYSTEM_PROMPT = "Kitten in armour with a medieval weapon"
 
 URL = "https://api.getimg.ai/v1/flux-schnell/text-to-image"
 
+SEED = randint(1, 2147483647)
+
+IMAGE_NAME = 'kitten-{SEED}.png'
+FILE_PATH = './tmp/' + IMAGE_NAME
+
+
 PAYLOAD = {
     "prompt": SYSTEM_PROMPT,
     "width": 256,
     "height": 256,
-    "seed": 42,
+    "seed": SEED,
     "output_format": "png",
     "response_format": "url"
 }
@@ -48,34 +64,81 @@ HEADERS = {
     "authorization": f"Bearer {GETIMG_API_KEY}"
 }
 
-response = requests.post(URL, json=PAYLOAD, headers=HEADERS)
-
 
 # Methods
 
-def parse_response(response):
+def get_image(cur, url=URL, payload=PAYLOAD, headers=HEADERS, file_path=FILE_PATH):
+    response = requests.post(url, json=payload, headers=headers).json()
+
     if response.get("error") is None:
         image_url = response["url"]
-        cost = response["cost"]
+        cur.execute('INSERT INTO PRICE (IMAGE_NAME, URL, COST, TIMESTAMP) VALUES (?, ?, ?, ?)',
+                    (IMAGE_NAME, image_url, response.get("cost"), datetime.now()))
+    else:
+        return response, 'ERROR', f'Error: {response.get("error")}'
 
+    img_data = requests.get(image_url).content
+    with open(FILE_PATH, 'wb') as handler:
+        handler.write(img_data)
+
+    return response, 'INFO', f"Created image {IMAGE_NAME} using seed {SEED}"
+
+def upload_image(file_path=FILE_PATH):
+    try:
+        folder = m.find('kitten-in-armour')
+        m.upload(file_path, folder[0])
+    except FileNotFoundError:
+        return 'ERROR', f"FileNotFoundError: file {IMAGE_NAME} could not be found on the system"
+    return 'INFO', f"Uploaded image {IMAGE_NAME} to Mega"
+
+def remove_local_image(file_path=FILE_PATH):
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except FileExistsError:
+            return 'ERROR', f"FileExistsError: file {IMAGE_NAME} could not be removed from the system"
+        return 'INFO', f"Removed image {IMAGE_NAME} from folder tmp successfully"
+
+def full_api_call():
+    db_conn = sqlite3.connect('./db/database.db')
+    cur = db_conn.cursor()
+
+    response, level, message = get_image(cur)
+    cur.execute('INSERT INTO LOGS VALUES (?, ?, ?, ?)',
+                (datetime.now(), level, message, str(response)))
+    
+    image_url = response.get("url")
+
+    level, message = upload_image()
+    cur.execute('INSERT INTO LOGS VALUES (?, ?, ?, NULL)',
+                (datetime.now(), level, message))
+    remove_local_image()
+    cur.execute('INSERT INTO LOGS VALUES (?, ?, ?, NULL)',
+                (datetime.now(), level, message))
+    
+    db_conn.commit()
+    db_conn.close()
+
+    return image_url
 
 
 # Commands
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
-    keyboard = [[InlineKeyboardButton("Get started", callback_data="/help")]]
+    keyboard = [[InlineKeyboardButton("Get started", callback_data="/magic")]]
 
     await update.message.reply_text("Aye, Warrior! Here, take a companion for your travels.\n/magic for the secret incantations",
                                     reply_markup=InlineKeyboardMarkup(keyboard))
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def magic_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
     commands_explained = [f"{command} {description}" for command, description in zip(commands, command_descriptions)]
     await update.message.reply_text(f"{"\n".join(commands_explained)}")
 
-async def spacio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def companion_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
+    image_url = full_api_call()
     await update.message.reply_photo(image_url)
 
 
