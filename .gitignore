@@ -171,7 +171,7 @@ cython_debug/
 .pypirc
 
 # Database
-database.db
+src/db/database.db
 
 # Testing
 test.py
