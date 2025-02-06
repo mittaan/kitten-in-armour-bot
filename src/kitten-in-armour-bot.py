@@ -20,7 +20,7 @@ from datetime import datetime
 
 # Global constants and config method
 
-load_dotenv()
+load_dotenv("../.env", override=True)
 
 MEGA_EMAIL = os.getenv("MEGA_EMAIL")
 MEGA_PASSWORD = os.getenv("MEGA_PASSWORD")
@@ -31,7 +31,7 @@ m = mega.login(MEGA_EMAIL, MEGA_PASSWORD)
 GETIMG_API_KEY = os.getenv("GETIMG_API_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-BOT_USERNAME = "@kitten_in_armour_bot"
+BOT_USERNAME = "@kitteninarmour_bot"
 
 BOT_COMMANDS = [('/start', 'Starts a conversation with the bot.'),
                 ('/magic', 'Secret incantations.'),
@@ -43,7 +43,7 @@ URL = "https://api.getimg.ai/v1/flux-schnell/text-to-image"
 
 SEED = randint(1, 2147483647)
 
-IMAGE_NAME = 'kitten-{SEED}.png'
+IMAGE_NAME = f'kitten-{SEED}.png'
 FILE_PATH = './tmp/' + IMAGE_NAME
 
 
@@ -69,7 +69,7 @@ def fetch_image_from_database():
     db_conn = sqlite3.connect('./db/database.db')
     cur = db_conn.cursor()
 
-    cur.execute('SELECT IMAGE_NAME, URL FROM PRICE')
+    cur.execute('SELECT IMAGE_NAME, URL FROM IMAGES_INFO')
 
     query_result = cur.fetchall()
     
@@ -87,7 +87,7 @@ def get_image(cur, url=URL, payload=PAYLOAD, headers=HEADERS, file_path=FILE_PAT
 
     if response.get("error") is None:
         image_url = response["url"]
-        cur.execute('INSERT INTO PRICE (IMAGE_NAME, URL, COST, TIMESTAMP) VALUES (?, ?, ?, ?)',
+        cur.execute('INSERT INTO IMAGES_INFO (IMAGE_NAME, URL, COST, TIMESTAMP) VALUES (?, ?, ?, ?)',
                     (IMAGE_NAME, image_url, response.get("cost"), datetime.now()))
     else:
         return response, 'ERROR', f'Error: {response.get("error")}'
@@ -149,7 +149,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def magic_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
     commands_explained = [f"{command} {description}" for command, description in zip(commands, command_descriptions)]
-    await update.message.reply_text(f"{"\n".join(commands_explained)}")
+    await update.message.reply_text('\n'.join(commands_explained))
 
 async def companion_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
