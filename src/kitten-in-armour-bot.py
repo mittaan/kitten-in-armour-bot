@@ -14,8 +14,6 @@ import os
 import sqlite3
 from mega import Mega
 from dotenv import load_dotenv
-import json
-from pathlib import Path
 from random import randint
 from datetime import datetime
 
@@ -66,6 +64,23 @@ HEADERS = {
 
 
 # Methods
+
+def fetch_image_from_database():
+    db_conn = sqlite3.connect('./db/database.db')
+    cur = db_conn.cursor()
+
+    cur.execute('SELECT IMAGE_NAME, URL FROM PRICE')
+
+    query_result = cur.fetchall()
+    
+    db_conn.commit()
+    db_conn.close()
+
+    stored_images = {img: url for img, url in query_result}
+
+    if IMAGE_NAME in stored_images.keys():
+        return stored_images.get(IMAGE_NAME)
+    return None
 
 def get_image(cur, url=URL, payload=PAYLOAD, headers=HEADERS, file_path=FILE_PATH):
     response = requests.post(url, json=payload, headers=headers).json()
@@ -138,7 +153,9 @@ async def magic_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def companion_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
-    image_url = full_api_call()
+    image_url = fetch_image_from_database()
+    if image_url is None:
+        image_url = full_api_call()
     await update.message.reply_photo(image_url)
 
 
@@ -148,8 +165,8 @@ def handle_response(text: str) -> str:
     if text in commands:
         return f"Executing command {text}"
     elif text == BOT_USERNAME:
-        return "Hello! Need a cat?\nTry /spacio"
-    return "Not a valid command,\nplease seek /help"
+        return "Oi, you! It's dangerous to go alone,\nbring a /companion"
+    return "Never heard of this incantation,\ncheck the available /magic"
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -170,7 +187,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response: str = handle_response(new_text)
             else:
                 response: str = handle_response(BOT_USERNAME)
-                keyboard.append([InlineKeyboardButton("Free kitty", callback_data="/spacio")])
+                keyboard.append([InlineKeyboardButton("Call a buddy", callback_data="/companion")])
                 
         else:
             return
@@ -181,7 +198,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response: str = handle_response(new_text)
             else:
                 response: str = handle_response(BOT_USERNAME)
-                keyboard.append([InlineKeyboardButton("Free kitty", callback_data="/spacio")])
+                keyboard.append([InlineKeyboardButton("Call a buddy", callback_data="/companion")])
                 
         else:
             response: str = handle_response(text)
@@ -196,21 +213,30 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     callback_data = update.callback_query.data
 
     match callback_data:
-        case "/help":
-            await help_command(callback, context)
-        case "/spacio":
-            await spacio_command(callback, context)
+        case "/magic":
+            await magic_command(callback, context)
+        case "/companion":
+            await companion_command(callback, context)
 
 
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):    
+    db_conn = sqlite3.connect('./db/database.db')
+    cur = db_conn.cursor()
+    
     error_message = update.message if update.message is not None else update.edited_message
-    logger.error(f"Update {error_message} from {update.message.from_user.id} caused error {context.error}")
+
+    message = f"Update {error_message} from user caused error {context.error}"
+
+    cur.execute('INSERT INTO LOGS VALUES (?, ?, ?, NULL)',
+                (datetime.now(), 'ERROR', message))
+    db_conn.commit()
+    db_conn.close()
 
 
 
 if __name__ == "__main__":
 
-    logger.info("Starting bot...")
+    print("Starting bot...")
     
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     bot = app.bot
@@ -219,12 +245,12 @@ if __name__ == "__main__":
     valid_commands = list(commands) + commands_with_bot_name
     valid_commands.append(BOT_USERNAME)
 
-    headers = { 'x-api-key' : API_KEY }
+    headers = { 'x-api-key' : GETIMG_API_KEY }
     
     # Commands
     app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("spacio", spacio_command))
+    app.add_handler(CommandHandler("magic", magic_command))
+    app.add_handler(CommandHandler("companion", companion_command))
     app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     # Messages
@@ -233,5 +259,5 @@ if __name__ == "__main__":
     # Errors
     app.add_error_handler(error)
 
-    logger.info("Polling...")
+    print("Polling...")
     app.run_polling(poll_interval=1)
