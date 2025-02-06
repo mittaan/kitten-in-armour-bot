@@ -1,0 +1,12 @@
+name: kitten-in-armour-bot
+
+services:
+  kitten-in-armour-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      GETIMG_API_KEY: ${GETIMG_API_KEY}
+      BOT_TOKEN: ${BOT_TOKEN}
+      MEGA_EMAIL: ${MEGA_EMAIL}
+      MEGA_PASSWORD: ${MEGA_PASSWORD}
