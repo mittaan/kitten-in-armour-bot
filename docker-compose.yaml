@@ -2,9 +2,8 @@ name: kitten-in-armour-bot
 
 services:
   kitten-in-armour-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: kitten-in-armour-bot
+    image: ghcr.io/mittaan/kitten-in-armour-bot-kitten-in-armour-bot:latest
     environment:
       GETIMG_API_KEY: ${GETIMG_API_KEY}
       BOT_TOKEN: ${BOT_TOKEN}
