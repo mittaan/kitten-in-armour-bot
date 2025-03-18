@@ -15,14 +15,13 @@ jobs:
 
         steps:
             - name: Get changes
-              uses: appleboy/ssh-action@master
+              uses: appleboy/ssh-action@v1
               with:
                 host: ${{ secrets.SSH_HOST }}
                 username: ${{ secrets.SSH_USER }}
                 password: ${{ secrets.SSH_PRIVATE_KEY }}
                 port: ${{ secrets.SSH_PORT }}
                 script: |
-                  ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
                   cd ${{ secrets.WORKDIR }}
                   git checkout master
                   git pull
