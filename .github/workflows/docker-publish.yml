@@ -9,6 +9,22 @@ env:
     IMAGE_NAME: ${{ github.actor }}/kitten-in-armour-bot-kitten-in-armour-bot:latest
 
 jobs:
+    pull:
+        name: pull changes
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Get changes
+              uses: appleboy/ssh-action@master
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USER }}
+                password: ${{ secrets.SSH_PRIVATE_KEY }}
+                script: |
+                  cd ${{ secrets.WORKDIR }}
+                  git checkout master
+                  git pull
+
     publish:
         name: publish image
         runs-on: ubuntu-latest
