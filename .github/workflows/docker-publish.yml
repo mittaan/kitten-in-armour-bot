@@ -15,15 +15,11 @@ jobs:
 
         steps:
             - name: Get changes
-              uses: appleboy/ssh-action@master
-              with:
-                host: ${{ secrets.SSH_HOST }}
-                username: ${{ secrets.SSH_USER }}
-                password: ${{ secrets.SSH_PRIVATE_KEY }}
-                script: |
-                  cd ${{ secrets.WORKDIR }}
-                  git checkout master
-                  git pull
+              run: |
+                ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+                cd ${{ secrets.WORKDIR }}
+                git checkout master
+                git pull
 
     publish:
         name: publish image
