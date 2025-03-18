@@ -15,7 +15,7 @@ jobs:
 
         steps:
             - name: Get changes
-              uses: appleboy/ssh-action@v1.0.3
+              uses: appleboy/ssh-action@v1.1.0
               env:
                 WORKDIR: ${{ secrets.WORKDIR }}
               with:
