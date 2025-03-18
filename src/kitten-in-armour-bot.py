@@ -37,7 +37,7 @@ BOT_COMMANDS = [('/start', 'Starts a conversation with the bot.'),
                 ('/magic', 'Secret incantations.'),
                 ('/companion', 'Get yourself a worthy companion.')]
 
-SYSTEM_PROMPT = "Kitten in armour with a medieval weapon"
+SYSTEM_PROMPT = "Grey kitten in armour with a medieval weapon"
 
 URL = "https://api.getimg.ai/v1/flux-schnell/text-to-image"
 
