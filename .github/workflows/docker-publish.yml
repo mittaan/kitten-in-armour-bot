@@ -22,7 +22,7 @@ jobs:
                 host: ${{ secrets.SSH_HOST }}
                 username: ${{ secrets.USERNAME }}
                 password: ${{ secrets.SSH_PRIVATE_KEY }}
-                port: ${{ secrets.SSH_PORT }}
+                port: 22
                 envs: WORKDIR
                 script: |
                   cd $WORKDIR
