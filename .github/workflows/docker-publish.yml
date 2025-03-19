@@ -57,9 +57,12 @@ jobs:
                 ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
             - name: connect and pull
               run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
-                    rm ~/.docker/config.json &&
                     echo ${{ secrets.GH_SECRET }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin && 
                     cd ${{ secrets.WORKDIR }} && 
+                    export GETIMG_API_KEY = ${{ secrets.GETIMG_API_KEY }}
+                    export BOT_TOKEN = ${{ secrets.BOT_TOKEN }}
+                    export MEGA_EMAIL = ${{ secrets.MEGA_EMAIL }}
+                    export MEGA_PASSWORD = ${{ secrets.MEGA_PASSWORD }}
                     docker compose pull && docker compose up -d && 
                     exit"
             - name: cleanup
