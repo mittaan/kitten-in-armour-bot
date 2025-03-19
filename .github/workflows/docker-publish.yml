@@ -56,17 +56,18 @@ jobs:
                 echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
                 ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
             - name: connect and pull
+              env:
+                GETIMG_API_KEY: ${{ secrets.GETIMG_API_KEY }}
+                BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+                MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+                MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
               run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
                     echo ${{ secrets.GH_SECRET }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin && 
                     cd ${{ secrets.WORKDIR }} && 
-                    GETIMG_API_KEY = ${{ secrets.GETIMG_API_KEY }} &&
-                    BOT_TOKEN = ${{ secrets.BOT_TOKEN }} &&
-                    MEGA_EMAIL = ${{ secrets.MEGA_EMAIL }} &&
-                    MEGA_PASSWORD = ${{ secrets.MEGA_PASSWORD }} &&
-                    export ${GETIMG_API_KEY} &&
-                    export ${BOT_TOKEN} &&
-                    export ${MEGA_EMAIL} &&
-                    export ${MEGA_PASSWORD} &&
+                    export $GETIMG_API_KEY &&
+                    export $BOT_TOKEN &&
+                    export $MEGA_EMAIL &&
+                    export $MEGA_PASSWORD &&
                     docker compose pull && docker compose up -d && 
                     exit"
             - name: cleanup
