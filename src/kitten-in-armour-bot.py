@@ -8,6 +8,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ContextTypes,
+    CallbackContext,
     CallbackQueryHandler
 )
 import os
@@ -37,7 +38,7 @@ BOT_COMMANDS = [('/start', 'Starts a conversation with the bot.'),
                 ('/magic', 'Secret incantations.'),
                 ('/companion', 'Get yourself a worthy companion.')]
 
-SYSTEM_PROMPT = "Grey kitten in armour with a medieval weapon"
+SYSTEM_PROMPT = "kitten in armour with a medieval weapon"
 
 URL = "https://api.getimg.ai/v1/flux-schnell/text-to-image"
 
@@ -47,17 +48,19 @@ HEADERS = {
     "authorization": f"Bearer {GETIMG_API_KEY}"
 }
 
+AVAILABLE_PARAMS = {"1": 'brown', "2": 'grey', "3": 'orange', "4": 'black', "5": 'white', "6": 'bicolor', "7": 'mackarel'}
+
 
 # Methods
 
-def set_seed():
+def set_seed(mod):
     seed = randint(1, 2147483647)
 
     image_name = f'kitten-{seed}.png'
     file_path = './tmp/' + image_name
 
     payload = {
-        "prompt": SYSTEM_PROMPT,
+        "prompt": f"{mod} {SYSTEM_PROMPT}",
         "width": 256,
         "height": 256,
         "seed": seed,
@@ -150,22 +153,27 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
     keyboard = [[InlineKeyboardButton("Get started", callback_data="/magic")]]
 
-    await update.message.reply_text("Aye, Warrior! Here, take a companion for your travels.\n/magic for the secret incantations",
+    await message.reply_text("Aye, Warrior! Here, take a companion for your travels.\n/magic for the secret incantations",
                                     reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def magic_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message is not None else update.edited_message
     commands_explained = [f"{command} {description}" for command, description in zip(commands, command_descriptions)]
-    await update.message.reply_text('\n'.join(commands_explained))
+    await message.reply_text('\n'.join(commands_explained))
 
-async def companion_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def companion_command(update: Update, context: CallbackContext):
     message = update.message if update.message is not None else update.edited_message
+    param = "".join(context.args).strip()
+    mod = ""
+
+    if param in AVAILABLE_PARAMS:
+        mod = param
     
-    seed, image_name, file_path, payload = set_seed()
+    seed, image_name, file_path, payload = set_seed(mod)
     image_url = fetch_image_from_database(image_name)
     if image_url is None:
         image_url = full_api_call(payload, file_path, image_name, seed)
-    await update.message.reply_photo(image_url)
+    await message.reply_photo(image_url)
 
 
 # Responses
