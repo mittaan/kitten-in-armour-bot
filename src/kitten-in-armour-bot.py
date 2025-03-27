@@ -175,6 +175,17 @@ async def companion_command(update: Update, context: CallbackContext):
         image_url = full_api_call(payload, file_path, image_name, seed)
     await message.reply_photo(image_url)
 
+async def debug_command(update: Update, context: CallbackContext):
+    message = update.message if update.message is not None else update.edited_message
+    param = "".join(context.args).strip()
+    mod = ""
+
+    if param in AVAILABLE_PARAMS:
+        mod = param
+    
+    seed, image_name, file_path, payload = set_seed(mod)
+
+    await message.reply_text('DEBUG: - ' + payload)
 
 # Responses
 
@@ -268,6 +279,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("magic", magic_command))
     app.add_handler(CommandHandler("companion", companion_command))
+    app.add_handler(CommandHandler("debug", debug_command))
     app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     # Messages
