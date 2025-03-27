@@ -36,7 +36,8 @@ BOT_USERNAME = "@kitteninarmour_bot"
 
 BOT_COMMANDS = [('/start', 'Starts a conversation with the bot.'),
                 ('/magic', 'Secret incantations.'),
-                ('/companion', 'Get yourself a worthy companion.')]
+                ('/companion', 'Get yourself a worthy companion.'),
+                ('/debug', 'debug')]
 
 SYSTEM_PROMPT = "kitten in armour with a medieval weapon"
 
