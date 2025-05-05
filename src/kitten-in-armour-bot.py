@@ -186,7 +186,7 @@ async def debug_command(update: Update, context: CallbackContext):
     
     seed, image_name, file_path, payload = set_seed(mod)
 
-    await message.reply_text('DEBUG: - ' + payload)
+    await message.reply_text(f'DEBUG: - {payload}')
 
 # Responses
 
